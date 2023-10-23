@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import asyncio
+from logging import getLogger
 
 from pyrogram import filters
 from pyrogram.errors import ChatAdminRequired, ChatNotModified, FloodWait
@@ -32,6 +33,8 @@ from misskaty.core.decorator.errors import capture_err
 from misskaty.core.decorator.permissions import adminsOnly, list_admins
 from misskaty.helper.functions import get_urls_from_text
 from misskaty.vars import COMMAND_HANDLER, SUDO
+
+LOGGER = getLogger("MissKaty")
 
 __MODULE__ = "Locks"
 __HELP__ = """
@@ -83,8 +86,6 @@ async def current_chat_permissions(chat_id):
         perm = (await app.get_chat(chat_id)).permissions
     if perm.can_send_messages:
         perms.append("can_send_messages")
-    else:
-        LOGGER.info(f"debug perm: {perm}") # Temporary debug, idk why give error no object
     if perm.can_send_media_messages:
         perms.append("can_send_media_messages")
     if perm.can_send_audios:
@@ -164,7 +165,7 @@ async def locks_func(_, message):
         await tg_lock(message, permissions, data[parameter], state == "lock")
     elif parameter == "all" and state == "lock":
         try:
-            await app.set_chat_permissions(chat_id, ChatPermissions())
+            await app.set_chat_permissions(chat_id, ChatPermissions(all_perms=True))
             await message.reply_text(f"Locked Everything in {message.chat.title}")
         except ChatAdminRequired:
             await message.reply_msg(
@@ -176,15 +177,8 @@ async def locks_func(_, message):
             await app.set_chat_permissions(
                 chat_id,
                 ChatPermissions(
-                    can_send_messages=True,
-                    can_send_media_messages=True,
-                    can_send_other_messages=True,
-                    can_add_web_page_previews=True,
-                    can_send_polls=True,
-                    can_change_info=False,
-                    can_invite_users=True,
-                    can_pin_messages=False,
-                ),
+                    all_perms=True,
+                )
             )
             await message.reply(f"Unlocked Everything in {message.chat.title}")
         except ChatAdminRequired:
@@ -205,7 +199,7 @@ async def locktypes(_, message):
     await message.reply_text(perms)
 
 
-@app.on_message(filters.text & ~filters.private, group=69)
+@app.on_message(filters.text & filters.group, group=69)
 async def url_detector(_, message):
     user = message.from_user or message.sender_chat
     chat_id = message.chat.id

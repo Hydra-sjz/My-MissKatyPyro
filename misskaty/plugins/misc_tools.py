@@ -6,10 +6,12 @@
 """
 
 import asyncio
+import contextlib
 import html
 import json
 import os
 import re
+import sys
 import traceback
 from logging import getLogger
 from urllib.parse import quote
@@ -207,12 +209,13 @@ async def carbon_make(self: Client, ctx: Message):
         "code": text,
         "backgroundColor": "#1F816D",
     }
-    try:
-        response = await fetch.post(
-            "https://carbon.yasirapi.eu.org/api/cook", json=json_data, timeout=20
-        )
-    except httpx.HTTPError as exc:
-        return await ctx.reply_msg(f"HTTP Exception for {exc.request.url} - {exc}")
+    with contextlib.redirect_stdout(sys.stderr):
+        try:
+            response = await fetch.post(
+                "https://carbon.yasirapi.eu.org/api/cook", json=json_data, timeout=20
+            )
+        except httpx.HTTPError as exc:
+            return await ctx.reply_msg(f"HTTP Exception for {exc.request.url} - {exc}")
     if response.status_code != 200:
         return await ctx.reply_photo(
             f"https://http.cat/{response.status_code}",
@@ -350,7 +353,7 @@ async def translate(_, message):
     else:
         if len(message.command) < 3:
             return await message.reply_msg(
-                "Berikan Kode bahasa yang valid.\n[Available options](https://telegra.ph/Lang-Codes-11-08).\n<b>Usage:</b> <code>/tr en</code>",
+                "Berikan Kode bahasa yang valid.\n[Available options](https://tgraph.yasirweb.eu.org/Lang-Codes-11-08).\n<b>Usage:</b> <code>/tr en</code>",
             )
         target_lang = message.text.split(None, 2)[1]
         text = message.text.split(None, 2)[2]
@@ -561,17 +564,13 @@ async def who_is(client, message):
 async def close_callback(_, query: CallbackQuery):
     _, userid = query.data.split("#")
     if query.from_user.id != int(userid):
-        try:
+        with contextlib.suppress(QueryIdInvalid):
             return await query.answer("⚠️ Access Denied!", True)
-        except QueryIdInvalid:
-            return
-    try:
+    with contextlib.redirect_stdout(Exception):
         await query.answer("Deleting this message in 5 seconds.")
         await asyncio.sleep(5)
         await query.message.delete()
         await query.message.reply_to_message.delete()
-    except:
-        pass
 
 
 async def mdlapi(title):

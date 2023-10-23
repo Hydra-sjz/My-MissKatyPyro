@@ -53,13 +53,13 @@ async def handle_error(
     f_errname = f"crash_{tgl_now.strftime('%d %B %Y')}.txt"
     LOGGER.error(traceback.format_exc())
     with open(f_errname, "w+", encoding="utf-8") as log:
-        log.write(f"✍️ message: {m.text or m.caption}\n\n{traceback.format_exc()}")
+        log.write(f"✍️ Message: {m.text or m.caption}\n👱‍♂️ User: {m.from_user.id if m.from_user else m.sender_chat.id}\n\n{traceback.format_exc()}")
         log.close()
     if isinstance(m, pyrogram.types.Message):
         with contextlib.suppress(Exception):
             try:
                 await m.reply_photo(
-                    "https://telegra.ph/file/3c9162b242567ae25d5af.jpg",
+                    "https://img.yasirweb.eu.org/file/3c9162b242567ae25d5af.jpg",
                     caption="An Internal Error Occurred while Processing your Command, the Logs have been sent to the Owners of this Bot. Sorry for Inconvenience",
                 )
             except:
@@ -76,7 +76,7 @@ async def handle_error(
             await m.message.delete()
             try:
                 await m.reply_photo(
-                    "https://telegra.ph/file/3c9162b242567ae25d5af.jpg",
+                    "https://img.yasirweb.eu.org/file/3c9162b242567ae25d5af.jpg",
                     caption="An Internal Error Occurred while Processing your Command, the Logs have been sent to the Owners of this Bot. Sorry for Inconvenience",
                 )
             except:

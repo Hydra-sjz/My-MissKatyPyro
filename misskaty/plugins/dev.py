@@ -15,10 +15,12 @@ from time import time
 from typing import Any, Optional, Tuple
 
 import aiohttp
+import contextlib
 import cloudscraper
 import requests
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bs4 import BeautifulSoup
+from logging import getLogger
 from PIL import Image, ImageDraw, ImageFont
 from psutil import Process, boot_time, cpu_count, cpu_percent
 from psutil import disk_usage as disk_usage_percent
@@ -26,7 +28,7 @@ from psutil import net_io_counters, virtual_memory
 from pyrogram import Client
 from pyrogram import __version__ as pyrover
 from pyrogram import enums, filters
-from pyrogram.errors import FloodWait, PeerIdInvalid
+from pyrogram.errors import ChatSendPhotosForbidden, FloodWait, MessageTooLong, PeerIdInvalid, ChatSendPlainForbidden
 from pyrogram.raw.types import UpdateBotStopped
 from pyrogram.types import (
     InlineKeyboardButton,
@@ -68,6 +70,7 @@ __HELP__ = """
 
 var = {}
 teskode = {}
+LOGGER = getLogger("MissKaty")
 
 
 async def edit_or_reply(msg, **kwargs):
@@ -80,37 +83,55 @@ async def edit_or_reply(msg, **kwargs):
 @use_chat_lang()
 async def log_file(_, ctx: Message, strings):
     """Send log file"""
-    msg = await ctx.reply_msg("<b>Reading bot logs ...</b>")
+    msg = await ctx.reply_msg("<b>Reading bot logs ...</b>", quote=True)
     if len(ctx.command) == 1:
-        await ctx.reply_document(
-            "MissKatyLogs.txt",
-            caption="Log Bot MissKatyPyro",
-            reply_markup=InlineKeyboardMarkup(
-                [
+        try:
+            with open("MissKatyLogs.txt", "r") as file:
+                content = file.read()
+            data = {
+                "value": content,
+            }
+            pastelog = await fetch.post("https://paste.yasirapi.eu.org/save", data=data, follow_redirects=True)
+            await msg.edit_msg(f"<a href='{pastelog.url}'>Here the Logs</a>\nlog size: {get_readable_file_size(os.path.getsize('MissKatyLogs.txt'))}")
+        except Exception:
+            await ctx.reply_document(
+                "MissKatyLogs.txt",
+                caption="Log Bot MissKatyPyro",
+                reply_markup=InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            strings("cl_btn"),
-                            f"close#{ctx.from_user.id}",
-                        )
+                        [
+                            InlineKeyboardButton(
+                                strings("cl_btn"),
+                                f"close#{ctx.from_user.id}",
+                            )
+                        ]
                     ]
-                ]
-            ),
-        )
-        await msg.delete_msg()
+                ),
+            )
+            await msg.delete_msg()
     elif len(ctx.command) == 2:
         val = ctx.text.split()
         tail = await shell_exec(f"tail -n {val[1]} -v MissKatyLogs.txt")
-        await msg.edit_msg(f"<pre language='bash'>{html.escape(tail[0])}</pre>")
+        try:
+            await msg.edit_msg(f"<pre language='bash'>{html.escape(tail[0])}</pre>")
+        except MessageTooLong:
+            with io.BytesIO(str.encode(tail[0])) as s:
+                s.name = "MissKatyLog-Tail.txt"
+                await ctx.reply_document(s)
+            await msg.delete()
     else:
         await msg.edit_msg("Unsupported parameter")
 
 
 @app.on_message(filters.command(["donate"], COMMAND_HANDLER))
-async def donate(_, ctx: Message):
-    await ctx.reply_photo(
-        "https://telegra.ph/file/9427d61d6968b8ee4fb2f.jpg",
-        caption=f"Hai {ctx.from_user.mention}, jika kamu merasa bot ini berguna kamu bisa melakukan donasi dengan scan QR menggunakan merchant yang support QRIS ya. Karena server bot ini menggunakan VPS dan tidaklah gratis. Terimakasih..\n\nHi {ctx.from_user.mention}, if you feel this bot is useful, you can make a donation via Paypal for international payment : https://paypal.me/yasirarism. Because this bot server is hosted in VPS and not free. Thank you..",
-    )
+async def donate(self: Client, ctx: Message):
+    with contextlib.suppress(ChatSendPlainForbidden, ChatSendPhotosForbidden):
+        await ctx.reply_photo(
+            "https://img.yasirweb.eu.org/file/9427d61d6968b8ee4fb2f.jpg",
+            caption=f"Hi {ctx.from_user.mention}, If you find this bot useful, you can make a donation to the account below. Because this bot server uses VPS and is not free. Thank You..\n\n<b>Indonesian Payment:</b>\n<b>QRIS:</b> https://img.yasirweb.eu.org/file/b1c86973ae4e55721983a.jpg (Yasir Store)\n<b>Mayar:</b> https://yasirarism.mayar.link/payme\n<b>Bank Jago:</b> 109641845083 (Yasir Aris M)\n\nFor international people can use PayPal to support me or via GitHub Sponsor:\nhttps://paypal.me/yasirarism\nhttps://github.com/sponsors/yasirarism\n\n<b>Source:</b> @BeriKopi",
+        )
+        await self.send_message(LOG_CHANNEL, f"❗️ <b>WARNING</b>\nI'm leaving from {ctx.chat.id} since i didn't have sufficient admin permissions.")
+        await ctx.chat.leave()
 
 
 @app.on_message(
@@ -366,7 +387,7 @@ async def shell_cmd(_, ctx: Message, strings):
     & filters.user(SUDO)
 )
 @app.on_edited_message(
-    (filters.command(["ev", "run", "meval"]) | filters.regex(r"app.run\(\)$"))
+    (filters.command(["ev", "run", "meval"], COMMAND_HANDLER) | filters.regex(r"app.run\(\)$"))
     & filters.user(SUDO)
 )
 @user.on_message(filters.command(["ev", "run", "meval"], ".") & filters.me)

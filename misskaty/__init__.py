@@ -2,7 +2,9 @@
 # * @date          2023-06-21 22:12:27
 # * @projectName   MissKatyPyro
 # * Copyright ©YasirPedia All rights reserved
-import time
+import time, os, uvloop
+from asyncio import get_event_loop
+from faulthandler import enable as faulthandler_enable
 from logging import ERROR, INFO, StreamHandler, basicConfig, getLogger, handlers
 
 from apscheduler.jobstores.mongodb import MongoDBJobStore
@@ -11,7 +13,6 @@ from async_pymongo import AsyncClient
 from pymongo import MongoClient
 from pyrogram import Client
 
-from misskaty.core import misskaty_patch
 from misskaty.vars import (
     API_HASH,
     API_ID,
@@ -41,7 +42,11 @@ MOD_NOLOAD = ["subscene_dl"]
 HELPABLE = {}
 cleanmode = {}
 botStartTime = time.time()
-misskaty_version = "v2.10.15 - Stable"
+misskaty_version = "v2.11.4 - Stable"
+
+uvloop.install()
+faulthandler_enable()
+from misskaty.core import misskaty_patch
 
 # Pyrogram Bot Client
 app = Client(
@@ -55,6 +60,8 @@ app = Client(
     workers=50,
     max_concurrent_transmissions=20,
 )
+app.db = AsyncClient(DATABASE_URI)
+app.log = getLogger("MissKaty")
 
 # Pyrogram UserBot Client
 user = Client(

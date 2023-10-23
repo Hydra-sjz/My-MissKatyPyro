@@ -174,7 +174,10 @@ async def kickFunc(client: Client, ctx: Message, strings) -> "Message":
         return await ctx.reply_msg(strings("kick_sudo_err"))
     if user_id in (await list_admins(ctx.chat.id)):
         return await ctx.reply_msg(strings("kick_admin_err"))
-    user = await app.get_users(user_id)
+    try:
+        user = await app.get_users(user_id)
+    except PeerIdInvalid:
+        return await ctx.reply_msg(strings("user_not_found"))
     msg = strings("kick_msg").format(
         mention=user.mention,
         id=user.id,
@@ -213,6 +216,8 @@ async def banFunc(client, message, strings):
 
     try:
         mention = (await app.get_users(user_id)).mention
+    except PeerIdInvalid:
+        return await message.reply_text(strings("user_not_found"))
     except IndexError:
         mention = (
             message.reply_to_message.sender_chat.title
@@ -249,9 +254,9 @@ async def banFunc(client, message, strings):
     keyboard = ikb({"🚨 Unban 🚨": f"unban_{user_id}"})
     try:
         await message.chat.ban_member(user_id)
-        await message.reply_text(msg, reply_markup=keyboard)
-    except Exception as err:
-        await message.reply(f"ERROR: {err}")
+        await message.reply_msg(msg, reply_markup=keyboard)
+    except ChatAdminRequired:
+        await message.reply("Please give me permission to banned members..!!!")
 
 
 # Unban members
@@ -282,6 +287,8 @@ async def unban_func(_, message, strings):
         await message.reply_msg(strings("unban_success").format(umention=umention))
     except PeerIdInvalid:
         await message.reply_msg(strings("unknown_id", context="general"))
+    except ChatAdminRequired:
+        await message.reply("Please give me permission to unban members..!!!")
 
 
 # Ban users listed in a message
@@ -470,7 +477,7 @@ async def demote(client, message, strings):
         umention = (await app.get_users(user_id)).mention
         await message.reply_text(f"Demoted! {umention}")
     except ChatAdminRequired:
-        await message.reply()
+        await message.reply("Please give permission to demote members..")
 
 
 # Pin Messages
@@ -535,7 +542,7 @@ async def mute(client, message, strings):
             if len(time_value[:-1]) < 3:
                 await message.chat.restrict_member(
                     user_id,
-                    permissions=ChatPermissions(),
+                    permissions=ChatPermissions(all_perms=False),
                     until_date=temp_mute,
                 )
                 await message.reply_text(msg, reply_markup=keyboard)
@@ -546,7 +553,7 @@ async def mute(client, message, strings):
         return
     if reason:
         msg += strings("banned_reason").format(reas=reason)
-    await message.chat.restrict_member(user_id, permissions=ChatPermissions())
+    await message.chat.restrict_member(user_id, permissions=ChatPermissions(all_perms=False))
     await message.reply_text(msg, reply_markup=keyboard)
 
 

@@ -1,4 +1,7 @@
 # MissKatyPyro
+```diff 
+- I will not give any support to your fork, so try learn by yourself!! Don't contact me because of your fault. I will stop update to this repo, and i will only give minor bugfix to this repo.
+```
 
 <!--Badges-->
 ![MIT License][license-shield] ![Repository Size][repository-size-shield] ![Issue Closed][issue-closed-shield]
@@ -9,7 +12,7 @@
 </p>
 
 <!--Project Buttons-->
- [![Readme in Indonesian][readme-ko-shield]][readme-ko-url] [![View Demo][view-demo-shield]][view-demo-url] [![Report bug][report-bug-shield]][report-bug-url] [![Request feature][request-feature-shield]][request-feature-url]
+ [![Readme in Indonesian][readme-ko-shield]][readme-ko-url] [![View Demo][view-demo-shield]][view-demo-url] [![Report bug][report-bug-shield]][report-bug-url] <!-- [![Request feature][request-feature-shield]][request-feature-url] -->
 
 <!--Table of Contents-->
 # Table of Contents
@@ -30,16 +33,17 @@
 *MissKaty* is a Telegram Bot built using Python and the Pyrogram library. Many useful features for us to use. I hope that one day this project will be discontinued, someone will continue or develop it again. I gave the name MissKaty because I like cats, a cute animal that likes to be played with and friendly with humans.
 
 ## [2] Framework Tools And Server That Used To Build This Bot
- 🌱 PyroFork v2.x.x (Fork of Pyrogram with Topics Support and Some Patch)<br>
+ 🌱 PyroFork v2.x.x (Fork of Pyrogram with Topics, Stories Support and Some Patch)<br>
  🌱 Python 3.11 Support<br>
  🌱 MongoDB as Database<br>
  🌱 PyKeyboard for Building Pagination<br>
  🌱 VS Code<br>
- 🌱 VPS/Server With Docker Support (Recommended)<br>
+ 🌱 VPS/Server With Root and Docker Support (Recommended)<br>
 
 ## [3] Donation and Support
 *For Indonesian Only and some supported country:*<br>
  🌱 [QRIS][qris-url]<br>
+ 🌱 [Mayar ID][mayar]<br>
 
 *For International Payment:*<br>
  🌱 [Paypal][paypal-url]<br>
@@ -56,7 +60,7 @@ If you want help me fixing some error in my bot, you can make pull request to th
 | Downloader FB, TikTok and YT-DLP Support  |✔️|
 | MultiLanguage Support (Unfinished) |⚠️|
 | NightMode  |✔️|
-| ChatBot based on OpenAI |✔️|
+| ChatBot based on OpenAI and Google Bard |✔️|
 | MissKaty Mata |✔️|
 | Inline Search  |✔️|
 | Sticker Tools  |✔️|
@@ -72,7 +76,7 @@ If you want help me fixing some error in my bot, you can make pull request to th
 * `BOT_TOKEN`: Create a bot using [@BotFather](https://t.me/BotFather), and get the Telegram API token.
 * `API_ID`: Get this value from [telegram.org](https://my.telegram.org/apps)
 * `API_HASH`: Get this value from [telegram.org](https://my.telegram.org/apps)
-* `DATABASE_URI`: [mongoDB](https://www.mongodb.com) URI. Get this value from [mongoDB](https://www.mongodb.com). For more help watch this [video](https://youtu.be/1G1XwEOnxxo)
+* `DATABASE_URI`: [mongoDB](https://www.mongodb.com) URI. Get this value from [mongoDB](https://www.mongodb.com).
 * `LOG_CHANNEL` : A channel to log the activities of bot. Make sure bot is an admin in the channel.
 
 ### Optional Variables
@@ -81,12 +85,13 @@ If you want help me fixing some error in my bot, you can make pull request to th
 * `COMMAND_HANDLER`: List of handler bot command splitted by space. Ex: `. !` > so bot will respond with `.cmd` or `!cmd`
 * `SUDO`: User ID that have access to bot, split by space
 * `OPENAI_API`: Get it from OpenAI Web
+* `BARD_API`: Learn from this https://github.com/dsdanielpark/Bard-API to get cookies and set it as api key.
 * `CURRENCY_API`: Get API Key from https://app.exchangerate-api.com/sign-up
 
 ## [7] Tutorial Deploy (Recommended using Docker/Docker Compose)
 
 #### Build And Run Using Legacy Method
-- Make sure minimum python version is 3.8 to prevent some errors. Check it with this command:
+- Make sure minimum python version is 3.8 and max python 3.11 to prevent some errors. Check it with this command:
 ```
 python3 --version
 ```
@@ -101,7 +106,8 @@ pip3 install -r requirements.txt
 ```
 *Python 3.11*
 ```
-Install venv from your terminal and activate it
+python3 -m venv nama_venv
+source nama_venv/bin/activate
 pip3 install -r requirements.txt 
 ```
 - Setting your config.env or via environment and dont forget fill all required value.
@@ -157,7 +163,9 @@ sudo docker-compose stop <pid>
 
 ## [8] Thanks to 
  - Thanks To Allah Swt.
- - Thanks To Dan For His Awesome [Library](https://github.com/pyrogram/pyrogram).
+ - Thanks To Dan For [Pyrogram Library](https://github.com/pyrogram/pyrogram) as founder of pyrogram.
+ - Thanks To Mayuri For [Pyrofork Library](https://github.com/Mayuri-Chan) as owner of pyrofork library.
+ - Thanks To TeamDrivecok and SecretGroup TBK in Telegram.
  - Thanks To [The Hamker Cat](https://github.com/TheHamkerCat) For WilliamButcher Code.
  - Thanks To [Team Yukki](https://github.com/TeamYukki) For AFK Bot Code.
  - Thanks To [Wrench](https://github.com/EverythingSuckz) For Some Code.
@@ -168,7 +176,7 @@ sudo docker-compose stop <pid>
 ## [9] Disclaimer
 [![GNU Affero General Public License 2.0](https://www.gnu.org/graphics/agplv3-155x51.png)](https://www.gnu.org/licenses/agpl-3.0.en.html#header)    
 Licensed under [GNU AGPL 2.0.](https://github.com/yasirarism/MissKatyPyro/blob/master/LICENSE)
-WARNING: Selling The Codes To Other People For Money Is *Strictly Prohibited*. God always sees you.
+WARNING: Selling The Codes To Other People For Money Is *Strictly Prohibited*. Or i will stop this project forever.
 
 <!--Url for Badges-->
 [license-shield]: https://img.shields.io/github/license/yasirarism/MissKatyPyro?labelColor=D8D8D8&color=04B4AE
@@ -188,7 +196,8 @@ WARNING: Selling The Codes To Other People For Money Is *Strictly Prohibited*. G
 [readme-ko-url]: README.id.md
 [kofi-url]: https://ko-fi.com/yasirarism
 [paypal-url]: https://paypal.me/yasirarism
-[qris-url]: https://telegra.ph/file/9427d61d6968b8ee4fb2f.jpg
+[qris-url]: https://img.yasirweb.eu.org/file/9427d61d6968b8ee4fb2f.jpg
+[mayar]: https://yasirarism.mayar.link/payme
 [sociabuzz-url]: https://sociabuzz.com/yasirarism/tribe
 [saweria-url]: https://saweria.co/yasirarism
 [trakteer-url]: https://trakteer.id/yasir-aris-sp7cn
