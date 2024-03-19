@@ -7,6 +7,7 @@ from typing import Union
 
 from pyrogram.errors import (
     ChatAdminRequired,
+    ChannelPrivate,
     ChatSendPlainForbidden,
     ChatWriteForbidden,
     FloodWait,
@@ -21,11 +22,9 @@ from pyrogram.types import Message
 
 LOGGER = getLogger("MissKaty")
 
-Message.input = property(
-    lambda m: m.text[m.text.find(m.command[0]) + len(m.command[0]) + 1 :]
-    if len(m.command) > 1
-    else None
-)
+@property
+def parse_cmd(msg):
+    return msg.text.split(None, 1)[1] if len(msg.command) > 1 else None
 
 
 async def reply_text(
@@ -91,7 +90,7 @@ async def reply_text(
         LOGGER.warning(f"Got floodwait in {self.chat.id} for {e.value}'s.")
         await asleep(e.value)
         return await reply_text(self, text, *args, **kwargs)
-    except TopicClosed:
+    except (TopicClosed, ChannelPrivate):
         return
     except (ChatWriteForbidden, ChatAdminRequired, ChatSendPlainForbidden):
         LOGGER.info(
@@ -138,7 +137,7 @@ async def edit_text(
         LOGGER.warning(f"Got floodwait in {self.chat.id} for {e.value}'s.")
         await asleep(e.value)
         return await edit_text(self, text, *args, **kwargs)
-    except MessageNotModified:
+    except (MessageNotModified, ChannelPrivate):
         return False
     except (ChatWriteForbidden, ChatAdminRequired):
         LOGGER.info(
@@ -323,3 +322,4 @@ Message.edit_or_send_as_file = edit_or_send_as_file
 Message.reply_or_send_as_file = reply_or_send_as_file
 Message.reply_as_file = reply_as_file
 Message.delete_msg = delete
+Message.input = parse_cmd

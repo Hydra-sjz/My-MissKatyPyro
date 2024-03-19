@@ -42,7 +42,7 @@ MOD_NOLOAD = ["subscene_dl"]
 HELPABLE = {}
 cleanmode = {}
 botStartTime = time.time()
-misskaty_version = "v2.11.4 - Stable"
+misskaty_version = "v2.13"
 
 uvloop.install()
 faulthandler_enable()
@@ -58,7 +58,7 @@ app = Client(
     sleep_threshold=180,
     app_version="MissKatyPyro Stable",
     workers=50,
-    max_concurrent_transmissions=20,
+    max_concurrent_transmissions=4,
 )
 app.db = AsyncClient(DATABASE_URI)
 app.log = getLogger("MissKaty")

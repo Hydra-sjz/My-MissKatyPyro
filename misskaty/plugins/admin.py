@@ -34,7 +34,7 @@ from pyrogram.errors import (
     PeerIdInvalid,
     UsernameNotOccupied,
 )
-from pyrogram.types import ChatPermissions, ChatPrivileges, Message
+from pyrogram.types import ChatPermissions, ChatMember, ChatPrivileges, Message
 
 from database.warn_db import add_warn, get_warn, remove_warns
 from misskaty import app
@@ -85,11 +85,12 @@ __HELP__ = """
 /set_chat_title - Change The Name Of A Group/Channel.
 /set_chat_photo - Change The PFP Of A Group/Channel.
 /set_user_title - Change The Administrator Title Of An Admin.
+/mentionall - Mention all members in a groups.
 """
 
 
 # Admin cache reload
-@app.on_chat_member_updated()
+@app.on_chat_member_updated(filters.group, group=5)
 async def admin_cache_func(_, cmu):
     if cmu.old_chat_member and cmu.old_chat_member.promoted_by:
         try:
@@ -193,6 +194,8 @@ async def kickFunc(client: Client, ctx: Message, strings) -> "Message":
         await ctx.chat.unban_member(user_id)
     except ChatAdminRequired:
         await ctx.reply_msg(strings("no_ban_permission"))
+    except Exception as e:
+        await ctx.reply_msg(str(e))
 
 
 # Ban/DBan/TBan User
@@ -257,6 +260,8 @@ async def banFunc(client, message, strings):
         await message.reply_msg(msg, reply_markup=keyboard)
     except ChatAdminRequired:
         await message.reply("Please give me permission to banned members..!!!")
+    except Exception as e:
+        await message.reply_msg(str(e))
 
 
 # Unban members
@@ -275,8 +280,6 @@ async def unban_func(_, message, strings):
 
     if len(message.command) == 2:
         user = message.text.split(None, 1)[1]
-        if not user.startswith("@"):
-            user = int(user)
     elif len(message.command) == 1 and reply:
         user = message.reply_to_message.from_user.id
     else:
@@ -289,6 +292,8 @@ async def unban_func(_, message, strings):
         await message.reply_msg(strings("unknown_id", context="general"))
     except ChatAdminRequired:
         await message.reply("Please give me permission to unban members..!!!")
+    except Exception as e:
+        await message.reply_msg(str(e))
 
 
 # Ban users listed in a message
@@ -409,43 +414,48 @@ async def promoteFunc(client, message, strings):
         return await message.reply(strings("invalid_id_uname"))
     if not user_id:
         return await message.reply_text(strings("user_not_found"))
-    bot = await client.get_chat_member(message.chat.id, client.me.id)
+    bot = (await client.get_chat_member(message.chat.id, client.me.id)).privileges
     if user_id == client.me.id:
-        return await message.reply_text(strings("promote_self_err"))
-    if not bot.privileges.can_promote_members:
-        return await message.reply_text(strings("no_promote_perm"))
-    if message.command[0][0] == "f":
+        return await message.reply_msg(strings("promote_self_err"))
+    if not bot:
+        return await message.reply_msg("I'm not an admin in this chat.")
+    if not bot.can_promote_members:
+        return await message.reply_msg(strings("no_promote_perm"))
+    try:
+        if message.command[0][0] == "f":
+            await message.chat.promote_member(
+                user_id=user_id,
+                privileges=ChatPrivileges(
+                    can_change_info=bot.can_change_info,
+                    can_invite_users=bot.can_invite_users,
+                    can_delete_messages=bot.can_delete_messages,
+                    can_restrict_members=bot.can_restrict_members,
+                    can_pin_messages=bot.can_pin_messages,
+                    can_promote_members=bot.can_promote_members,
+                    can_manage_chat=bot.can_manage_chat,
+                    can_manage_video_chats=bot.can_manage_video_chats,
+                ),
+            )
+            return await message.reply_text(
+                strings("full_promote").format(umention=umention)
+            )
+
         await message.chat.promote_member(
             user_id=user_id,
             privileges=ChatPrivileges(
-                can_change_info=bot.privileges.can_change_info,
-                can_invite_users=bot.privileges.can_invite_users,
-                can_delete_messages=bot.privileges.can_delete_messages,
-                can_restrict_members=bot.privileges.can_restrict_members,
-                can_pin_messages=bot.privileges.can_pin_messages,
-                can_promote_members=bot.privileges.can_promote_members,
-                can_manage_chat=bot.privileges.can_manage_chat,
-                can_manage_video_chats=bot.privileges.can_manage_video_chats,
+                can_change_info=False,
+                can_invite_users=bot.can_invite_users,
+                can_delete_messages=bot.can_delete_messages,
+                can_restrict_members=bot.can_restrict_members,
+                can_pin_messages=bot.can_pin_messages,
+                can_promote_members=False,
+                can_manage_chat=bot.can_manage_chat,
+                can_manage_video_chats=bot.can_manage_video_chats,
             ),
         )
-        return await message.reply_text(
-            strings("full_promote").format(umention=umention)
-        )
-
-    await message.chat.promote_member(
-        user_id=user_id,
-        privileges=ChatPrivileges(
-            can_change_info=False,
-            can_invite_users=bot.privileges.can_invite_users,
-            can_delete_messages=bot.privileges.can_delete_messages,
-            can_restrict_members=bot.privileges.can_restrict_members,
-            can_pin_messages=bot.privileges.can_pin_messages,
-            can_promote_members=False,
-            can_manage_chat=bot.privileges.can_manage_chat,
-            can_manage_video_chats=bot.privileges.can_manage_video_chats,
-        ),
-    )
-    await message.reply_text(strings("normal_promote").format(umention=umention))
+        await message.reply_msg(strings("normal_promote").format(umention=umention))
+    except Exception as err:
+        await message.reply_msg(err)
 
 
 # Demote Member
@@ -478,6 +488,8 @@ async def demote(client, message, strings):
         await message.reply_text(f"Demoted! {umention}")
     except ChatAdminRequired:
         await message.reply("Please give permission to demote members..")
+    except Exception as e:
+        await message.reply_msg(str(e))
 
 
 # Pin Messages
@@ -505,6 +517,8 @@ async def pin(_, message, strings):
             strings("pin_no_perm"),
             disable_web_page_preview=True,
         )
+    except Exception as e:
+        await message.reply_msg(str(e))
 
 
 # Mute members
@@ -553,8 +567,11 @@ async def mute(client, message, strings):
         return
     if reason:
         msg += strings("banned_reason").format(reas=reason)
-    await message.chat.restrict_member(user_id, permissions=ChatPermissions(all_perms=False))
-    await message.reply_text(msg, reply_markup=keyboard)
+    try:
+        await message.chat.restrict_member(user_id, permissions=ChatPermissions(all_perms=False))
+        await message.reply_text(msg, reply_markup=keyboard)
+    except Exception as e:
+        await message.reply_msg(str(e))
 
 
 # Unmute members
@@ -617,10 +634,10 @@ async def warn_user(client, message, strings):
 
 @app.on_callback_query(filters.regex("unwarn_"))
 @use_chat_lang()
-async def remove_warning(client, cq, strings):
+async def remove_warning(_, cq, strings):
     from_user = cq.from_user
     chat_id = cq.message.chat.id
-    permissions = await member_permissions(chat_id, from_user.id, client)
+    permissions = await member_permissions(chat_id, from_user.id)
     permission = "can_restrict_members"
     if permission not in permissions:
         return await cq.answer(
@@ -647,10 +664,10 @@ async def remove_warning(client, cq, strings):
 
 @app.on_callback_query(filters.regex("unmute_"))
 @use_chat_lang()
-async def unmute_user(client, cq, strings):
+async def unmute_user(_, cq, strings):
     from_user = cq.from_user
     chat_id = cq.message.chat.id
-    permissions = await member_permissions(chat_id, from_user.id, client)
+    permissions = await member_permissions(chat_id, from_user.id)
     permission = "can_restrict_members"
     if permission not in permissions:
         return await cq.answer(
@@ -661,16 +678,19 @@ async def unmute_user(client, cq, strings):
     text = cq.message.text.markdown
     text = f"~~{text}~~\n\n"
     text += strings("rmmute_msg").format(mention=from_user.mention)
-    await cq.message.chat.unban_member(user_id)
-    await cq.message.edit(text)
+    try:
+        await cq.message.chat.unban_member(user_id)
+        await cq.message.edit(text)
+    except Exception as e:
+        await cq.answer(str(e))
 
 
 @app.on_callback_query(filters.regex("unban_"))
 @use_chat_lang()
-async def unban_user(client, cq, strings):
+async def unban_user(_, cq, strings):
     from_user = cq.from_user
     chat_id = cq.message.chat.id
-    permissions = await member_permissions(chat_id, from_user.id, client)
+    permissions = await member_permissions(chat_id, from_user.id)
     permission = "can_restrict_members"
     if permission not in permissions:
         return await cq.answer(
@@ -783,10 +803,13 @@ async def set_chat_title(_, ctx: Message):
         return await ctx.reply_text(f"**Usage:**\n/{ctx.command[0]} NEW NAME")
     old_title = ctx.chat.title
     new_title = ctx.text.split(None, 1)[1]
-    await ctx.chat.set_title(new_title)
-    await ctx.reply_text(
-        f"Successfully Changed Group Title From {old_title} To {new_title}"
-    )
+    try:
+        await ctx.chat.set_title(new_title)
+        await ctx.reply_text(
+            f"Successfully Changed Group Title From {old_title} To {new_title}"
+        )
+    except Exception as e:
+        await ctx.reply_msg(str(e))
 
 
 @app.on_cmd("set_user_title", self_admin=True, group_only=True)
@@ -803,10 +826,13 @@ async def set_user_title(_, ctx: Message):
             "**Usage:**\n/set_user_title NEW ADMINISTRATOR TITLE"
         )
     title = ctx.text.split(None, 1)[1]
-    await app.set_administrator_title(chat_id, from_user.id, title)
-    await ctx.reply_text(
-        f"Successfully Changed {from_user.mention}'s Admin Title To {title}"
-    )
+    try:
+        await app.set_administrator_title(chat_id, from_user.id, title)
+        await ctx.reply_text(
+            f"Successfully Changed {from_user.mention}'s Admin Title To {title}"
+        )
+    except Exception as e:
+        await ctx.reply_msg(str(e))
 
 
 @app.on_cmd("set_chat_photo", self_admin=True, group_only=True)
@@ -833,3 +859,23 @@ async def set_chat_photo(_, ctx: Message):
     except Exception as err:
         await ctx.reply(f"Failed changed group photo. ERROR: {err}")
     os.remove(photo)
+
+
+@app.on_message(filters.group & filters.command('mentionall', COMMAND_HANDLER))
+async def mentionall(app: Client, msg: Message):
+    user = await msg.chat.get_member(msg.from_user.id)
+    if user.status in (enums.ChatMemberStatus.OWNER, enums.ChatMemberStatus.ADMINISTRATOR):
+        total = []
+        async for member in app.get_chat_members(msg.chat.id):
+            member: ChatMember
+            if member.user.username:
+                total.append(f'@{member.user.username}')
+            else:
+                total.append(member.user.mention())
+
+        NUM = 4
+        for i in range(0, len(total), NUM):
+            message = ' '.join(total[i:i+NUM])
+            await app.send_message(msg.chat.id, message, message_thread_id=msg.message_thread_id)
+    else:
+        await app.send_message(msg.chat.id, 'Admins only can do that !', reply_to_message_id=msg.id)

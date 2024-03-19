@@ -84,25 +84,25 @@ def calcExpression(text):
 
 
 def calc_btn(uid):
-    CALCULATE_BUTTONS = InlineKeyboardMarkup(
+    return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton("DEL", callback_data=f"calc|{uid}|DEL"),
                 InlineKeyboardButton("AC", callback_data=f"calc|{uid}|AC"),
                 InlineKeyboardButton("(", callback_data=f"calc|{uid}|("),
-                InlineKeyboardButton(")", callback_data=f"calc|{uid}|)")
+                InlineKeyboardButton(")", callback_data=f"calc|{uid}|)"),
             ],
             [
                 InlineKeyboardButton("7", callback_data=f"calc|{uid}|7"),
                 InlineKeyboardButton("8", callback_data=f"calc|{uid}|8"),
                 InlineKeyboardButton("9", callback_data=f"calc|{uid}|9"),
-                InlineKeyboardButton("÷", callback_data=f"calc|{uid}|/")
+                InlineKeyboardButton("÷", callback_data=f"calc|{uid}|/"),
             ],
             [
                 InlineKeyboardButton("4", callback_data=f"calc|{uid}|4"),
                 InlineKeyboardButton("5", callback_data=f"calc|{uid}|5"),
                 InlineKeyboardButton("6", callback_data=f"calc|{uid}|6"),
-                InlineKeyboardButton("×", callback_data=f"calc|{uid}|*")
+                InlineKeyboardButton("×", callback_data=f"calc|{uid}|*"),
             ],
             [
                 InlineKeyboardButton("1", callback_data=f"calc|{uid}|1"),
@@ -115,10 +115,9 @@ def calc_btn(uid):
                 InlineKeyboardButton("0", callback_data=f"calc|{uid}|0"),
                 InlineKeyboardButton("=", callback_data=f"calc|{uid}|="),
                 InlineKeyboardButton("+", callback_data=f"calc|{uid}|+"),
-            ]
+            ],
         ]
     )
-    return CALCULATE_BUTTONS
 
 
 @app.on_message(filters.command(["calc", "calculate", "calculator"]))
@@ -134,44 +133,43 @@ async def calculate_handler(self, ctx):
 
 @app.on_callback_query(filters.regex("^calc"))
 async def calc_cb(self, query):
-        _, uid, data = query.data.split("|")
-        if query.from_user.id != int(uid):
-            return await query.answer("Who are you??", show_alert=True, cache_time=5)
-        try:
-            text = query.message.text.split("\n")[0].strip().split("=")[0].strip()
-            text = '' if f"Made by @{self.me.username}" in text else text
-            inpt = text + query.data
-            result = ""
-            if data == "=":
-                result = calcExpression(text)
-                text = ""
-            elif data == "DEL":
-                text = text[:-1]
-            elif data == "AC":
-                text = ""
-            else:
-                dot_dot_check = re.findall(r"(\d*\.\.|\d*\.\d+\.)", inpt)
-                opcheck = re.findall(r"([*/\+-]{2,})", inpt)
-                if not dot_dot_check and not opcheck:
-                    strOperands = re.findall(r"(\.\d+|\d+\.\d+|\d+)", inpt)
-                    if strOperands:
-                        text += data
-                        result = calcExpression(text)
+    _, uid, data = query.data.split("|")
+    if query.from_user.id != int(uid):
+        return await query.answer("Who are you??", show_alert=True, cache_time=5)
+    try:
+        text = query.message.text.split("\n")[0].strip().split("=")[0].strip()
+        text = '' if f"Made by @{self.me.username}" in text else text
+        inpt = text + query.data
+        result = ""
+        if data == "=":
+            result = calcExpression(text)
+            text = ""
+        elif data == "DEL":
+            text = text[:-1]
+        elif data == "AC":
+            text = ""
+        else:
+            dot_dot_check = re.findall(r"(\d*\.\.|\d*\.\d+\.)", inpt)
+            opcheck = re.findall(r"([*/\+-]{2,})", inpt)
+            if not dot_dot_check and not opcheck:
+                if strOperands := re.findall(r"(\.\d+|\d+\.\d+|\d+)", inpt):
+                    text += data
+                    result = calcExpression(text)
 
-            text = f"{text:<50}"
-            if result:
-                if text:
-                    text += f"\n{result:>50}"
-                else:
-                    text = result
-            text += f"\n\nMade by @{self.me.username}"
-            await query.message.edit_msg(
-                text=text,
-                disable_web_page_preview=True,
-                reply_markup=calc_btn(query.from_user.id)
-            )
-        except Exception as error:
-            LOGGER.error(error)
+        text = f"{text:<50}"
+        if result:
+            if text:
+                text += f"\n{result:>50}"
+            else:
+                text = result
+        text += f"\n\nMade by @{self.me.username}"
+        await query.message.edit_msg(
+            text=text,
+            disable_web_page_preview=True,
+            reply_markup=calc_btn(query.from_user.id)
+        )
+    except Exception as error:
+        LOGGER.error(error)
 
 @app.on_cmd("kbbi")
 async def kbbi_search(_, ctx: Client):
@@ -422,34 +420,6 @@ async def tostick(client, message):
         await message.reply_text(str(e))
 
 
-@app.on_message(filters.command(["toimage"], COMMAND_HANDLER))
-@capture_err
-async def topho(client, message):
-    try:
-        if not message.reply_to_message or not message.reply_to_message.sticker:
-            return await message.reply_text("Reply ke sticker untuk mengubah ke foto")
-        if message.reply_to_message.sticker.is_animated:
-            return await message.reply_text(
-                "Ini sticker animasi, command ini hanya untuk sticker biasa."
-            )
-        photo = await message.reply_to_message.download()
-        im = Image.open(photo).convert("RGB")
-        filename = f"toimg_{message.from_user.id}.png"
-        im.save(filename, "png")
-        await asyncio.gather(
-            *[
-                message.reply_document(filename),
-                message.reply_photo(
-                    filename, caption=f"Sticker -> Image\n@{client.me.username}"
-                ),
-            ]
-        )
-        os.remove(photo)
-        os.remove(filename)
-    except Exception as e:
-        await message.reply_text(str(e))
-
-
 @app.on_message(filters.command(["id"], COMMAND_HANDLER))
 async def showid(_, message):
     chat_type = message.chat.type.value
@@ -501,29 +471,33 @@ async def who_is(client, message):
     try:
         from_user = await client.get_users(from_user_id)
     except Exception as error:
-        await status_message.edit(str(error))
-        return
+        return await status_message.edit(str(error))
     if from_user is None:
-        return await status_message.edit("no valid user_id / message specified")
+        return await status_message.edit("No valid user_id / message specified")
     message_out_str = ""
-    message_out_str += f"<b>➲First Name:</b> {from_user.first_name}\n"
-    last_name = from_user.last_name or "<b>None</b>"
-    message_out_str += f"<b>➲Last Name:</b> {last_name}\n"
-    message_out_str += f"<b>➲Telegram ID:</b> <code>{from_user.id}</code>\n"
-    username = from_user.username or "<b>None</b>"
-    dc_id = from_user.dc_id or "[User Doesn't Have Profile Pic]"
-    message_out_str += f"<b>➲Data Centre:</b> <code>{dc_id}</code>\n"
-    message_out_str += f"<b>➲User Name:</b> @{username}\n"
-    message_out_str += f"<b>➲User Link:</b> <a href='tg://user?id={from_user.id}'><b>Click Here</b></a>\n"
+    username = f"@{from_user.username}" or "<b>No Username</b>"
+    dc_id = from_user.dc_id or "<i>[User Doesn't Have Profile Pic]</i>"
+    bio = (await client.get_chat(from_user.id)).bio
+    count_pic = await client.get_chat_photos_count(from_user.id)
+    message_out_str += f"<b>🔸 First Name:</b> {from_user.first_name}\n"
+    if last_name := from_user.last_name:
+        message_out_str += f"<b>🔹 Last Name:</b> {last_name}\n"
+    message_out_str += f"<b>🆔 User ID:</b> <code>{from_user.id}</code>\n"
+    message_out_str += f"<b>✴️ User Name:</b> {username}\n"
+    message_out_str += f"<b>💠 Data Centre:</b> <code>{dc_id}</code>\n"
+    if bio:
+        message_out_str += f"<b>👨🏿‍💻 Bio:</b> <code>{bio}</code>\n"
+    message_out_str += f"<b>📸 Pictures:</b> {count_pic}\n"
+    message_out_str += f"<b>🧐 Restricted:</b> {from_user.is_restricted}\n"
+    message_out_str += f"<b>✅ Verified:</b> {from_user.is_verified}\n"
+    message_out_str += f"<b>🌐 Profile Link:</b> <a href='tg://user?id={from_user.id}'><b>Click Here</b></a>\n"
     if message.chat.type.value in (("supergroup", "channel")):
-        try:
+        with contextlib.suppress(UserNotParticipant, ChatAdminRequired):
             chat_member_p = await message.chat.get_member(from_user.id)
             joined_date = chat_member_p.joined_date
             message_out_str += (
                 "<b>➲Joined this Chat on:</b> <code>" f"{joined_date}" "</code>\n"
             )
-        except (UserNotParticipant, ChatAdminRequired):
-            pass
     if chat_photo := from_user.photo:
         local_user_photo = await client.download_media(message=chat_photo.big_file_id)
         buttons = [
@@ -557,7 +531,7 @@ async def who_is(client, message):
             quote=True,
             disable_notification=True,
         )
-    await status_message.delete()
+    await status_message.delete_msg()
 
 
 @app.on_callback_query(filters.regex("^close"))
@@ -569,8 +543,8 @@ async def close_callback(_, query: CallbackQuery):
     with contextlib.redirect_stdout(Exception):
         await query.answer("Deleting this message in 5 seconds.")
         await asyncio.sleep(5)
-        await query.message.delete()
-        await query.message.reply_to_message.delete()
+        await query.message.delete_msg()
+        await query.message.reply_to_message.delete_msg()
 
 
 async def mdlapi(title):

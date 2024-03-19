@@ -15,6 +15,7 @@ from deep_translator import GoogleTranslator
 from pykeyboard import InlineButton, InlineKeyboard
 from pyrogram import Client, enums
 from pyrogram.errors import (
+    ListenerTimeout,
     MediaCaptionTooLong,
     MediaEmpty,
     MessageIdInvalid,
@@ -61,7 +62,7 @@ async def imdb_choose(_, ctx: Message):
             return await imdb_search_id(kuery, ctx)
     buttons = InlineKeyboard()
     ranval = get_random_string(4)
-    LIST_CARI.add(ranval, kuery, timeout=30)
+    LIST_CARI.add(ranval, kuery, timeout=15)
     buttons.row(
         InlineButton("🇺🇸 English", f"imdbcari#eng#{ranval}#{ctx.from_user.id}"),
         InlineButton("🇮🇩 Indonesia", f"imdbcari#ind#{ranval}#{ctx.from_user.id}"),
@@ -70,7 +71,7 @@ async def imdb_choose(_, ctx: Message):
     buttons.row(InlineButton("❌ Close", f"close#{ctx.from_user.id}"))
     await ctx.reply_photo(
         "https://img.yasirweb.eu.org/file/270955ef0d1a8a16831a9.jpg",
-        caption=f"Hi {ctx.from_user.mention}, Please select the language you want to use on IMDB Search. If you want use default lang for every user, click third button. So no need click select lang if use CMD.",
+        caption=f"Hi {ctx.from_user.mention}, Please select the language you want to use on IMDB Search. If you want use default lang for every user, click third button. So no need click select lang if use CMD.\n\nTimeout: 10s",
         reply_markup=buttons,
         quote=True,
     )
@@ -92,12 +93,10 @@ async def imdblangset(_, query: CallbackQuery):
             InlineButton("🗑 Remove UserSetting", f"setimdb#rm#{query.from_user.id}")
         )
     buttons.row(InlineButton("❌ Close", f"close#{query.from_user.id}"))
-    try:
+    with contextlib.suppress(MessageIdInvalid, MessageNotModified):
         await query.message.edit_caption(
             "<i>Please select available language below..</i>", reply_markup=buttons
         )
-    except (MessageIdInvalid, MessageNotModified):
-        pass
 
 
 @app.on_cb("setimdb")
@@ -108,7 +107,7 @@ async def imdbsetlang(_, query: CallbackQuery):
     _, langset = await is_imdbset(query.from_user.id)
     if langset == lang:
         return await query.answer(f"⚠️ Your Setting Already in ({langset})!", True)
-    try:
+    with contextlib.suppress(MessageIdInvalid, MessageNotModified):
         if lang == "eng":
             await add_imdbset(query.from_user.id, lang)
             await query.message.edit_caption(
@@ -124,8 +123,6 @@ async def imdbsetlang(_, query: CallbackQuery):
             await query.message.edit_caption(
                 "UserSetting for IMDB has been deleted from database."
             )
-    except (MessageIdInvalid, MessageNotModified):
-        pass
 
 
 async def imdb_search_id(kueri, message):
@@ -181,7 +178,7 @@ async def imdb_search_id(kueri, message):
             buttons.add(*BTN)
             await k.edit_caption(msg, reply_markup=buttons)
         except httpx.HTTPError as exc:
-            await k.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>", disable_web_page_preview=True)
+            await k.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>")
         except (MessageIdInvalid, MessageNotModified):
             pass
         except Exception as err:
@@ -243,7 +240,7 @@ async def imdb_search_en(kueri, message):
             buttons.add(*BTN)
             await k.edit_caption(msg, reply_markup=buttons)
         except httpx.HTTPError as exc:
-            await k.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>", disable_web_page_preview=True)
+            await k.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>")
         except (MessageIdInvalid, MessageNotModified):
             pass
         except Exception as err:
@@ -264,12 +261,10 @@ async def imdbcari(_, query: CallbackQuery):
             del LIST_CARI[msg]
         except KeyError:
             return await query.message.edit_caption("⚠️ Callback Query Sudah Expired!")
-        try:
+        with contextlib.suppress(MessageIdInvalid, MessageNotModified):
             await query.message.edit_caption(
                 "<i>🔎 Sedang mencari di Database IMDB..</i>"
             )
-        except (MessageIdInvalid, MessageNotModified):
-            pass
         msg = ""
         buttons = InlineKeyboard(row_width=4)
         with contextlib.redirect_stdout(sys.stderr):
@@ -311,7 +306,7 @@ async def imdbcari(_, query: CallbackQuery):
                 buttons.add(*BTN)
                 await query.message.edit_caption(msg, reply_markup=buttons)
             except httpx.HTTPError as exc:
-                await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>", disable_web_page_preview=True)
+                await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>")
             except (MessageIdInvalid, MessageNotModified):
                 pass
             except Exception as err:
@@ -368,7 +363,7 @@ async def imdbcari(_, query: CallbackQuery):
                 buttons.add(*BTN)
                 await query.message.edit_caption(msg, reply_markup=buttons)
             except httpx.HTTPError as exc:
-                await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>", disable_web_page_preview=True)
+                await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>")
             except (MessageIdInvalid, MessageNotModified):
                 pass
             except Exception as err:
@@ -392,7 +387,7 @@ async def imdb_id_callback(self: Client, query: CallbackQuery):
             r_json = json.loads(
                 sop.find("script", attrs={"type": "application/ld+json"}).contents[0]
             )
-            ott = await search_jw(r_json.get("name"), "ID")
+            ott = await search_jw(r_json.get("alternateName") or r_json.get("name"), "ID")
             typee = r_json.get("@type", "")
             res_str = ""
             tahun = (
@@ -470,17 +465,17 @@ async def imdb_id_callback(self: Client, query: CallbackQuery):
                 res_str += f"<b>Pemeran:</b> {actor[:-2]}\n\n"
             if deskripsi := r_json.get("description"):
                 summary = GoogleTranslator("auto", "id").translate(deskripsi)
-                res_str += f"<b>📜 Plot: </b> <code>{summary}</code>\n\n"
+                res_str += f"<b>📜 Plot:</b>\n<blockquote><code>{summary}</code></blockquote>\n\n"
             if keywd := r_json.get("keywords"):
                 key_ = "".join(
                     f"#{i.replace(' ', '_').replace('-', '_')}, " for i in keywd.split(",")
                 )
-                res_str += f"<b>🔥 Kata Kunci:</b> {key_[:-2]} \n"
+                res_str += f"<b>🔥 Kata Kunci:</b>\n<blockquote>{key_[:-2]}</blockquote>\n"
             if award := sop.select('li[data-testid="award_information"]'):
                 awards = (
                     award[0].find(class_="ipc-metadata-list-item__list-content-item").text
                 )
-                res_str += f"<b>🏆 Penghargaan:</b> <code>{GoogleTranslator('auto', 'id').translate(awards)}</code>\n"
+                res_str += f"<b>🏆 Penghargaan:</b>\n<blockquote><code>{GoogleTranslator('auto', 'id').translate(awards)}</code></blockquote>\n"
             else:
                 res_str += "\n"
             if ott != "":
@@ -532,7 +527,7 @@ async def imdb_id_callback(self: Client, query: CallbackQuery):
                     res_str, parse_mode=enums.ParseMode.HTML, reply_markup=markup
                 )
         except httpx.HTTPError as exc:
-            await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>", disable_web_page_preview=True)
+            await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>")
         except AttributeError:
             await query.message.edit_caption("Maaf, gagal mendapatkan info data dari IMDB.")
         except (MessageNotModified, MessageIdInvalid):
@@ -554,7 +549,7 @@ async def imdb_en_callback(self: Client, query: CallbackQuery):
             r_json = json.loads(
                 sop.find("script", attrs={"type": "application/ld+json"}).contents[0]
             )
-            ott = await search_jw(r_json.get("name"), "US")
+            ott = await search_jw(r_json.get("alternateName") or r_json.get("name"), "US")
             typee = r_json.get("@type", "")
             res_str = ""
             tahun = (
@@ -633,18 +628,18 @@ async def imdb_en_callback(self: Client, query: CallbackQuery):
                 )
                 res_str += f"<b>Stars:</b> {actors[:-2]}\n\n"
             if description := r_json.get("description"):
-                res_str += f"<b>📜 Summary: </b> <code>{description}</code>\n\n"
+                res_str += f"<b>📜 Summary:</b>\n<blockquote><code>{description}</code></blockquote>\n\n"
             if r_json.get("keywords"):
                 key_ = "".join(
                     f"#{i.replace(' ', '_').replace('-', '_')}, "
                     for i in r_json["keywords"].split(",")
                 )
-                res_str += f"<b>🔥 Keywords:</b> {key_[:-2]} \n"
+                res_str += f"<b>🔥 Keywords:</b>\n<blockquote>{key_[:-2]}</blockquote>\n"
             if award := sop.select('li[data-testid="award_information"]'):
                 awards = (
                     award[0].find(class_="ipc-metadata-list-item__list-content-item").text
                 )
-                res_str += f"<b>🏆 Awards:</b> <code>{awards}</code>\n"
+                res_str += f"<b>🏆 Awards:</b>\n<blockquote><code>{awards}</code></blockquote>\n"
             else:
                 res_str += "\n"
             if ott != "":
@@ -696,7 +691,7 @@ async def imdb_en_callback(self: Client, query: CallbackQuery):
                     res_str, parse_mode=enums.ParseMode.HTML, reply_markup=markup
                 )
         except httpx.HTTPError as exc:
-            await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>", disable_web_page_preview=True)
+            await query.message.edit_caption(f"HTTP Exception for IMDB Search - <code>{exc}</code>")
         except AttributeError:
             await query.message.edit_caption("Sorry, failed getting data from IMDB.")
         except (MessageNotModified, MessageIdInvalid):

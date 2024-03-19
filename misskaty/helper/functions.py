@@ -4,6 +4,7 @@ from re import sub as re_sub
 from string import ascii_lowercase
 
 from pyrogram import enums
+from pyrogram.types import Message
 
 from misskaty import app
 
@@ -14,6 +15,22 @@ def get_urls_from_text(text: str) -> bool:
                 \([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\
                 ()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""".strip()
     return [x[0] for x in findall(regex, text)]
+
+
+def extract_urls(reply_markup):
+    urls = []
+    if reply_markup.inline_keyboard:
+        buttons = reply_markup.inline_keyboard
+        for i, row in enumerate(buttons):
+            for j, button in enumerate(row):
+                if button.url:
+                    name = (
+                        "\n~\nbutton"
+                        if i * len(row) + j == 0
+                        else f"button{i * len(row) + j + 1}"
+                    )
+                    urls.append((f"{name}", button.text, button.url))
+    return urls
 
 
 async def alpha_to_int(user_id_alphabet: str) -> int:
@@ -94,7 +111,7 @@ async def extract_user(message):
     return (await extract_user_and_reason(message))[0]
 
 
-async def time_converter(message, time_value: str) -> int:
+async def time_converter(message: Message, time_value: str) -> datetime:
     unit = ["m", "h", "d"]  # m == minutes | h == hours | d == days
     check_unit = "".join(list(filter(time_value[-1].lower().endswith, unit)))
     currunt_time = datetime.now()
@@ -109,7 +126,7 @@ async def time_converter(message, time_value: str) -> int:
         temp_time = currunt_time + timedelta(days=int(time_digit))
     else:
         return await message.reply_text("Incorrect time specified.")
-    return int(datetime.timestamp(temp_time))
+    return temp_time
 
 
 def extract_text_and_keyb(ikb, text: str, row_width: int = 2):

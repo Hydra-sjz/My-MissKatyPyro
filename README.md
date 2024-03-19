@@ -43,7 +43,6 @@
 ## [3] Donation and Support
 *For Indonesian Only and some supported country:*<br>
  🌱 [QRIS][qris-url]<br>
- 🌱 [Mayar ID][mayar]<br>
 
 *For International Payment:*<br>
  🌱 [Paypal][paypal-url]<br>
@@ -84,8 +83,8 @@ If you want help me fixing some error in my bot, you can make pull request to th
 * `DATABASE_NAME`: Name of the database in MongoDB
 * `COMMAND_HANDLER`: List of handler bot command splitted by space. Ex: `. !` > so bot will respond with `.cmd` or `!cmd`
 * `SUDO`: User ID that have access to bot, split by space
-* `OPENAI_API`: Get it from OpenAI Web
-* `BARD_API`: Learn from this https://github.com/dsdanielpark/Bard-API to get cookies and set it as api key.
+* `OPENAI_KEY`: Get api key from https://platform.openai.com/account/api-keys
+* `GOOGEAI_KEY`: Learn how to get api key from this https://ai.google.dev/tutorials/python_quickstart?hl=en.
 * `CURRENCY_API`: Get API Key from https://app.exchangerate-api.com/sign-up
 
 ## [7] Tutorial Deploy (Recommended using Docker/Docker Compose)
@@ -186,7 +185,7 @@ WARNING: Selling The Codes To Other People For Money Is *Strictly Prohibited*. O
 <!--Url for Buttons-->
 [readme-ko-shield]: https://img.shields.io/badge/-readme%20in%20Indonesian-2E2E2E?style=for-the-badge
 [view-demo-shield]: https://img.shields.io/badge/-%F0%9F%98%8E%20view%20demo-F3F781?style=for-the-badge
-[view-demo-url]: https://t.me/MissKatyPyro
+[view-demo-url]: https://t.me/MissKatyBot
 [report-bug-shield]: https://img.shields.io/badge/-%F0%9F%90%9E%20report%20bug-F5A9A9?style=for-the-badge
 [report-bug-url]: https://github.com/yasirarism/MissKatyPyro/issues
 [request-feature-shield]: https://img.shields.io/badge/-%E2%9C%A8%20request%20feature-A9D0F5?style=for-the-badge
