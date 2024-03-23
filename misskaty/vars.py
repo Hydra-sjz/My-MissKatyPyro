@@ -39,7 +39,7 @@ else:
 LOG_GROUP_ID = environ.get("LOG_GROUP_ID")
 USER_SESSION = environ.get("USER_SESSION")
 DATABASE_NAME = environ.get("DATABASE_NAME", "MissKatyDB")
-TZ = environ.get("TZ", "Asia/Jakarta")
+TZ = environ.get("TZ", "Asia/Kolkata")
 COMMAND_HANDLER = environ.get("COMMAND_HANDLER", "! /").split()
 SUDO = list(
     {
